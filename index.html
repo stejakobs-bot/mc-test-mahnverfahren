@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC-Test: Mahnverfahren</title>
+<style>
+  :root{--blue:#1F4E79;--light:#EAF1F8;--green:#2E7D32;--green-bg:#E8F5E9;--red:#C62828;--red-bg:#FFEBEE;--grey:#5f6b76}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f4f6f9;color:#1d2731;line-height:1.45}
+  header{background:var(--blue);color:#fff;padding:18px 20px}
+  header h1{margin:0;font-size:1.25rem}
+  header p{margin:4px 0 0;font-size:.9rem;opacity:.85}
+  main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+  .card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:22px}
+  .meta{display:flex;justify-content:space-between;font-size:.85rem;color:var(--grey);margin-bottom:8px}
+  .bar{height:8px;background:#dde4ec;border-radius:4px;overflow:hidden;margin-bottom:18px}
+  .bar div{height:100%;background:var(--blue);width:0;transition:width .3s}
+  .part{display:inline-block;font-size:.75rem;font-weight:600;background:var(--light);color:var(--blue);padding:3px 8px;border-radius:10px;margin-bottom:10px}
+  h2{font-size:1.1rem;margin:0 0 16px}
+  .opt{display:block;width:100%;text-align:left;font:inherit;background:#fff;border:2px solid #d3dbe4;border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:hover:not(:disabled){border-color:var(--blue);background:var(--light)}
+  .opt b{color:var(--blue);margin-right:8px}
+  .opt:disabled{cursor:default}
+  .opt.correct{border-color:var(--green);background:var(--green-bg)}
+  .opt.wrong{border-color:var(--red);background:var(--red-bg)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:6px;display:none}
+  .feedback.ok{display:block;background:var(--green-bg);color:#1b5e20}
+  .feedback.no{display:block;background:var(--red-bg);color:#8e1b1b}
+  .btn{display:inline-block;font:inherit;font-weight:600;border:none;border-radius:10px;padding:12px 22px;background:var(--blue);color:#fff;cursor:pointer;margin-top:16px}
+  .btn:hover{filter:brightness(1.1)}
+  .hidden{display:none}
+  .start label{display:block;font-weight:600;margin:14px 0 6px}
+  .start input{width:100%;font:inherit;padding:10px 12px;border:2px solid #d3dbe4;border-radius:10px}
+  .score{font-size:2.4rem;font-weight:700;color:var(--blue);margin:6px 0}
+  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.9rem}
+  th,td{border:1px solid #d3dbe4;padding:7px 8px;text-align:left;vertical-align:top}
+  th{background:var(--blue);color:#fff}
+  td.r{color:var(--green);font-weight:700}
+  td.f{color:var(--red);font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>MC-Test: Außergerichtliches und gerichtliches Mahnverfahren</h1>
+  <p>15 Fragen · je eine richtige Antwort · 1 Punkt pro Frage</p>
+</header>
+<main>
+  <section id="start" class="card start">
+    <h2>Willkommen!</h2>
+    <p>Beantworten Sie die 15 Fragen nacheinander. Nach jeder Antwort sehen Sie sofort, ob sie richtig war. Am Ende erhalten Sie Ihre Punktzahl und eine Übersicht.</p>
+    <label for="name">Ihr Name (optional)</label>
+    <input id="name" type="text" autocomplete="off" placeholder="Vor- und Nachname">
+    <button class="btn" id="go">Test starten</button>
+  </section>
+
+  <section id="quiz" class="card hidden">
+    <div class="meta"><span id="count"></span><span id="pts"></span></div>
+    <div class="bar"><div id="prog"></div></div>
+    <span class="part" id="part"></span>
+    <h2 id="q"></h2>
+    <div id="opts"></div>
+    <div id="fb" class="feedback"></div>
+    <button class="btn hidden" id="next">Weiter</button>
+  </section>
+
+  <section id="result" class="card hidden">
+    <h2 id="rname">Ergebnis</h2>
+    <div class="score" id="score"></div>
+    <p id="grade"></p>
+    <table>
+      <thead><tr><th>Nr.</th><th>Ihre Antwort</th><th>Richtige Antwort</th></tr></thead>
+      <tbody id="tbl"></tbody>
+    </table>
+    <button class="btn" id="again">Noch einmal</button>
+  </section>
+</main>
+
+<script>
+const A = "Teil A: Außergerichtliches Mahnverfahren", B = "Teil B: Gerichtliches Mahnverfahren";
+const QUESTIONS = [
+ {p:A,q:"„Wahrscheinlich haben Sie übersehen, dass die Rechnung Nr. … vom … über … Euro noch nicht beglichen ist.“ Zu welcher Mahnstufe gehört dieser Satz?",
+  o:["2. Mahnung","1. Mahnung (Zahlungserinnerung)","3. Mahnung","4. Mahnung"],c:1,
+  e:"Höfliche Erinnerung, man unterstellt ein Versehen → 1. Mahnung."},
+ {p:A,q:"„Leider haben Sie unsere Zahlungserinnerung vom … nicht beachtet.“ Zu welcher Mahnstufe gehört dieser Satz?",
+  o:["1. Mahnung","3. Mahnung","2. Mahnung","4. Mahnung"],c:2,
+  e:"Der Satz bezieht sich auf eine bereits erfolgte Zahlungserinnerung → 2. Mahnung."},
+ {p:A,q:"Welches Merkmal ist typisch für die 3. Mahnung?",
+  o:["Es wird eine letzte Zahlungsfrist gesetzt, oft mit Verzugszinsen und Spesen.","Es wird höflich darauf hingewiesen, dass die Zahlung wohl übersehen wurde.","Der Gläubiger beantragt einen Vollstreckungsbescheid.","Der Gläubiger kündigt an, die Rechnung zu stornieren."],c:0,
+  e:"Letzte Frist, Verzugszinsen und Spesen sind typisch für die 3. Mahnung."},
+ {p:A,q:"Welcher Satz stammt aus einer 4. Mahnung?",
+  o:["„Sicherlich liegt ein Versehen vor. Wir bitten Sie, den ausstehenden Betrag in den nächsten Tagen zu überweisen.“","„Die Zahlung war bereits am … fällig. Wir bitten höflichst um Ausgleich des Kontos.“","„Unsere Buchhaltung konnte auch nach unseren beiden Mahnschreiben vom … und vom … einen Zahlungseingang nicht feststellen.“","„Wir haben ein Inkassoinstitut damit beauftragt, den Rechnungsbetrag zuzüglich Verzugszinsen und Spesen einzuziehen.“"],c:3,
+  e:"Die Einschaltung eines Inkassoinstituts gehört zur 4. Mahnung."},
+ {p:A,q:"Wie ist der Ton einer 1. Mahnung in der Regel?",
+  o:["Scharf, mit Androhung gerichtlicher Schritte","Sachlich-bestimmt, mit letzter Frist und Zinsforderung","Höflich und freundlich – man geht von einem Versehen des Kunden aus","Drohend, mit Hinweis auf die Zwangsvollstreckung"],c:2,
+  e:"Die 1. Mahnung ist eine freundliche Zahlungserinnerung."},
+ {p:A,q:"Womit droht der Gläubiger typischerweise in der 4. (letzten) Mahnung?",
+  o:["Mit dem Antrag auf Erlass eines Mahnbescheids oder der Einschaltung eines Inkassoinstituts","Mit einer Anzeige bei der Polizei","Mit einer weiteren freundlichen Zahlungserinnerung","Mit der sofortigen Pfändung durch den Gerichtsvollzieher"],c:0,
+  e:"In der 4. Mahnung werden Mahnbescheid, Inkasso bzw. die gerichtliche Durchsetzung angedroht."},
+ {p:B,q:"Was ist ein Mahnbescheid?",
+  o:["Ein Urteil nach einer mündlichen Verhandlung","Ein vollstreckbarer Titel, mit dem sofort gepfändet werden kann","Eine Mahnung des Gläubigers per Einschreiben","Eine Mahnung durch das Gericht"],c:3,
+  e:"Merke: Der Mahnbescheid ist eine Mahnung durch das Gericht."},
+ {p:B,q:"Bei welchem Gericht beantragt der Gläubiger den Erlass eines Mahnbescheids?",
+  o:["Beim Landgericht am Ort des Schuldners","Beim Amtsgericht am Ort des Gläubigers","Beim Amtsgericht am Ort des Schuldners","Beim Oberlandesgericht"],c:1,
+  e:"Der Antrag wird beim Amtsgericht am Ort des Gläubigers gestellt."},
+ {p:B,q:"Welche Reaktion des Schuldners auf den Mahnbescheid führt zum streitigen Verfahren (mündliche Verhandlung)?",
+  o:["Widerspruch","Stillschweigen","Zahlung","Antrag auf einen Vollstreckungsbescheid"],c:0,
+  e:"Widerspruch → streitiges Verfahren mit mündlicher Verhandlung."},
+ {p:B,q:"Innerhalb welcher Frist kann der Schuldner Widerspruch gegen den Mahnbescheid einlegen?",
+  o:["Innerhalb von 1 Woche","Innerhalb von 4 Wochen","Innerhalb von 2 Wochen","Innerhalb von 6 Monaten"],c:2,
+  e:"Die Widerspruchsfrist beträgt 2 Wochen."},
+ {p:B,q:"Der Schuldner reagiert nicht auf den Mahnbescheid. Was kann der Gläubiger nach Ablauf von 2 Wochen tun?",
+  o:["Sofort die Zwangsvollstreckung durchführen lassen","Klage beim Landgericht erheben","Einen zweiten Mahnbescheid beantragen","Den Erlass eines Vollstreckungsbescheids beantragen"],c:3,
+  e:"Bei Stillschweigen kann der Gläubiger nach 2 Wochen den Vollstreckungsbescheid beantragen."},
+ {p:B,q:"Der Schuldner reagiert im gesamten Verfahren überhaupt nicht. Welche Reihenfolge ist richtig?",
+  o:["Antrag auf Vollstreckungsbescheid → Zustellung des Mahnbescheids → Antrag auf Mahnbescheid → Zwangsvollstreckung","Antrag auf Mahnbescheid → Erlass und Zustellung des Mahnbescheids → Antrag auf Vollstreckungsbescheid → Zustellung des Vollstreckungsbescheids → Zwangsvollstreckung","Antrag auf Mahnbescheid → mündliche Verhandlung → Zustellung des Vollstreckungsbescheids → Zwangsvollstreckung","Zustellung des Vollstreckungsbescheids → Antrag auf Mahnbescheid → Zustellung des Mahnbescheids → Zwangsvollstreckung"],c:1,
+  e:"Erst Mahnbescheid, dann Vollstreckungsbescheid, dann Zwangsvollstreckung."},
+ {p:B,q:"Mit welchem Rechtsbehelf kann sich der Schuldner gegen den Vollstreckungsbescheid wehren?",
+  o:["Einspruch","Widerspruch","Berufung","Revision"],c:0,
+  e:"Gegen den Vollstreckungsbescheid legt man Einspruch ein (binnen 2 Wochen)."},
+ {p:B,q:"Warum ist der Vollstreckungsbescheid für den Gläubiger so wichtig?",
+  o:["Er ist nur eine weitere Mahnung ohne rechtliche Folgen.","Er beendet das Verfahren endgültig zugunsten des Schuldners.","Er ist ein vollstreckbarer Titel – damit kann die Zwangsvollstreckung eingeleitet werden.","Er verpflichtet beide Parteien zu einer mündlichen Verhandlung."],c:2,
+  e:"Der Vollstreckungsbescheid ist ein vollstreckbarer Titel."},
+ {p:B,q:"Der Schuldner legt gegen einen Mahnbescheid über 15.000 € Widerspruch ein. Vor welchem Gericht findet die mündliche Verhandlung statt?",
+  o:["Amtsgericht","Landgericht","Oberlandesgericht","Bundesgerichtshof"],c:1,
+  e:"Über 10.000 € ist das Landgericht zuständig, bis 10.000 € das Amtsgericht (seit 1.1.2026)."}
+];
+const L = ["A","B","C","D"];
+let i = 0, score = 0, answers = [], order = [];
+const $ = id => document.getElementById(id);
+
+function shuffle(a){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]];}return a;}
+
+function start(){
+  i=0;score=0;answers=[];
+  order = QUESTIONS.map(q => shuffle([0,1,2,3]));
+  $("start").classList.add("hidden");$("result").classList.add("hidden");$("quiz").classList.remove("hidden");
+  show();
+}
+function show(){
+  const q = QUESTIONS[i];
+  $("count").textContent = `Frage ${i+1} von ${QUESTIONS.length}`;
+  $("pts").textContent = `Punkte: ${score}`;
+  $("prog").style.width = (i/QUESTIONS.length*100)+"%";
+  $("part").textContent = q.p;
+  $("q").textContent = `${i+1}. ${q.q}`;
+  $("fb").className="feedback";$("fb").textContent="";
+  $("next").classList.add("hidden");
+  const box = $("opts"); box.innerHTML="";
+  order[i].forEach((oi,pos)=>{
+    const b=document.createElement("button");
+    b.className="opt";b.dataset.oi=oi;
+    b.innerHTML=`<b>${L[pos]})</b>`;b.appendChild(document.createTextNode(q.o[oi]));
+    b.onclick=()=>pick(oi);
+    box.appendChild(b);
+  });
+}
+function pick(oi){
+  const q=QUESTIONS[i], ok = oi===q.c;
+  if(ok) score++;
+  answers.push({chosen:oi,ok});
+  [...$("opts").children].forEach(b=>{
+    b.disabled=true;
+    const v=+b.dataset.oi;
+    if(v===q.c) b.classList.add("correct");
+    else if(v===oi) b.classList.add("wrong");
+  });
+  $("fb").className="feedback "+(ok?"ok":"no");
+  $("fb").textContent=(ok?"✔ Richtig! ":"✘ Leider falsch. ")+q.e;
+  $("pts").textContent=`Punkte: ${score}`;
+  $("next").textContent = i<QUESTIONS.length-1 ? "Weiter" : "Zum Ergebnis";
+  $("next").classList.remove("hidden");
+  $("next").focus();
+}
+function next(){ i++; if(i<QUESTIONS.length) show(); else finish(); }
+function finish(){
+  $("quiz").classList.add("hidden");$("result").classList.remove("hidden");
+  const n=$("name").value.trim();
+  $("rname").textContent = n ? `Ergebnis von ${n}` : "Ihr Ergebnis";
+  $("score").textContent = `${score} / ${QUESTIONS.length} Punkte`;
+  const pct=score/QUESTIONS.length;
+  $("grade").textContent = pct>=0.9?"Hervorragend – Sie beherrschen das Mahnverfahren!":pct>=0.7?"Gut gemacht! Schauen Sie sich die falschen Antworten noch einmal an.":pct>=0.5?"Solide Grundlage – wiederholen Sie die markierten Fragen.":"Wiederholen Sie die Arbeitsblätter zum Mahnverfahren und versuchen Sie es noch einmal.";
+  $("tbl").innerHTML="";
+  answers.forEach((a,k)=>{
+    const q=QUESTIONS[k], tr=document.createElement("tr");
+    const td=(t,c)=>{const d=document.createElement("td");d.textContent=t;if(c)d.className=c;return d;};
+    tr.appendChild(td(k+1));
+    tr.appendChild(td((a.ok?"✔ ":"✘ ")+q.o[a.chosen], a.ok?"r":"f"));
+    tr.appendChild(td(a.ok?"–":q.o[q.c]));
+    $("tbl").appendChild(tr);
+  });
+}
+$("go").onclick=start;$("next").onclick=next;
+$("again").onclick=()=>{$("result").classList.add("hidden");$("start").classList.remove("hidden");};
+</script>
+</body>
+</html>
